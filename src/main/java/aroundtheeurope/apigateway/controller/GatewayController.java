@@ -14,10 +14,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/gateway")
@@ -35,7 +33,7 @@ public class GatewayController {
     }
 
     @PostMapping("/api/v1/trips/**")
-    public ResponseEntity<String> forwardTripRequests(HttpServletRequest request, @AuthenticationPrincipal Jwt jwt) {
+    public ResponseEntity<String> queueTripRequest(HttpServletRequest request, @AuthenticationPrincipal Jwt jwt) {
         String userId = jwt.getSubject();
         return tripRequestService.queueTripRequest(request, userId);
     }

@@ -23,6 +23,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
+    implementation("jakarta.validation:jakarta.validation-api:3.1.0")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     // RabbitMQ
     implementation("org.springframework.amqp:spring-rabbit:3.1.6")
