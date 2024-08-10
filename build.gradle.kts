@@ -29,6 +29,8 @@ dependencies {
     implementation("org.springframework.amqp:spring-rabbit:3.1.6")
     // Redis
     implementation("org.springframework.boot:spring-boot-starter-data-redis:3.3.0")
+    // Dotenv
+    implementation("io.github.cdimascio:dotenv-java:3.0.0")
 }
 
 tasks.withType<Test> {

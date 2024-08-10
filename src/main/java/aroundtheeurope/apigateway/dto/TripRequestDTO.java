@@ -35,6 +35,22 @@ public class TripRequestDTO {
     @Positive(message = "Time limit must be positive")
     private int timeLimitSeconds = 10;
 
+    public TripRequestDTO() {}
+
+    // Copy constructor
+    public TripRequestDTO(TripRequestDTO other) {
+        this.origin = other.origin;
+        this.destination = other.destination;
+        this.departureAt = other.departureAt;
+        this.returnBefore = other.returnBefore;
+        this.budget = other.budget;
+        this.maxStay = other.maxStay;
+        this.minStay = other.minStay;
+        this.schengenOnly = other.schengenOnly;
+        this.excludedCities = new ArrayList<>(other.excludedCities); // Ensure a deep copy of the list
+        this.timeLimitSeconds = other.timeLimitSeconds;
+    }
+
     // Getters and Setters
 
     public String getOrigin() {

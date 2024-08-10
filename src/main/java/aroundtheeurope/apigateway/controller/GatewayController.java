@@ -1,41 +1,53 @@
 package aroundtheeurope.apigateway.controller;
 
-import aroundtheeurope.apigateway.configuration.EndpointConfig;
+import aroundtheeurope.apigateway.dto.ForwardedTripRequestDTO;
+import aroundtheeurope.apigateway.dto.TripRequestDTO;
+import aroundtheeurope.apigateway.service.RequestForwardingService;
 import aroundtheeurope.apigateway.service.TripRequestService;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.util.UriComponentsBuilder;
 
-import java.util.Enumeration;
-import java.util.Map;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/gateway")
 public class GatewayController {
 
+    @Value("${trip-service.url}")
+    private String tripServiceUrl;
+    @Value("${identity-service.url}")
+    private String identityServiceUrl;
+
     private final RestTemplate restTemplate;
     private final TripRequestService tripRequestService;
-    private final Map<String, String> endpointMappings;
+    private final RequestForwardingService requestForwardingService;
 
     @Autowired
-    public GatewayController(RestTemplate restTemplate, TripRequestService tripRequestService, EndpointConfig endpointConfig) {
+    public GatewayController(
+            RestTemplate restTemplate,
+            TripRequestService tripRequestService,
+            RequestForwardingService requestForwardingService
+    ) {
         this.restTemplate = restTemplate;
         this.tripRequestService = tripRequestService;
-        this.endpointMappings = endpointConfig.getEndpointMappings();
+        this.requestForwardingService = requestForwardingService;
     }
 
-    @PostMapping("/api/v1/trips/**")
-    public ResponseEntity<String> queueTripRequest(HttpServletRequest request, @AuthenticationPrincipal Jwt jwt) {
+    @PostMapping("/api/v1/trips")
+    public ResponseEntity<String> queueTripRequest(@RequestBody @Valid TripRequestDTO tripRequestDTO, @AuthenticationPrincipal Jwt jwt) {
+
         String userId = jwt.getSubject();
-        return tripRequestService.queueTripRequest(request, userId);
+        ForwardedTripRequestDTO forwardedTripRequestDTO = new ForwardedTripRequestDTO(tripRequestDTO, userId);
+
+        return tripRequestService.queueTripRequest(forwardedTripRequestDTO, userId);
     }
 
     @DeleteMapping("/api/v1/trips")
@@ -50,52 +62,21 @@ public class GatewayController {
         return tripRequestService.getTripRequestPosition(userId);
     }
 
-    @RequestMapping("/api/v1/**")
-    public ResponseEntity<String> forwardRequests(HttpServletRequest request) {
-        String requestUri = request.getRequestURI().replace("/gateway", "");
-
-        if (!isValidEndpoint(requestUri)) {
-            return ResponseEntity.badRequest().body("Invalid endpoint");
+    @GetMapping("/api/v1/trips")
+    public ResponseEntity<String> getTrips(
+            @RequestParam(required = false) UUID requestId,
+            @AuthenticationPrincipal Jwt jwt,
+            HttpServletRequest request
+            ) {
+        String userId = jwt.getSubject();
+        String targetUrl = tripServiceUrl + "/api/v1/trips";
+        if (requestId != null) {
+            targetUrl += "?requestId=" + requestId;
+        }
+        else{
+            targetUrl += "?userId=" + userId;
         }
 
-        String targetUrl = buildTargetUrl(requestUri, request);
-        return forwardRequest(targetUrl, request);
-    }
-
-    private boolean isValidEndpoint(String requestUri) {
-        // Check if the request URI matches any of the valid endpoints
-        return endpointMappings.keySet().stream().anyMatch(requestUri::equals);
-    }
-
-    private String buildTargetUrl(String requestUri, HttpServletRequest request) {
-        String serviceUrl = getServiceUrl(requestUri);
-        return UriComponentsBuilder.fromHttpUrl(serviceUrl + requestUri)
-                .query(request.getQueryString())
-                .build()
-                .toUriString();
-    }
-
-    private String getServiceUrl(String requestUri) {
-        String serviceUrl = endpointMappings.get(requestUri);
-        if (serviceUrl == null) {
-            throw new IllegalArgumentException("No service mapped for URI: " + requestUri);
-        }
-        return serviceUrl;
-    }
-
-    private ResponseEntity<String> forwardRequest(String targetUrl, HttpServletRequest request) {
-        HttpHeaders headers = new HttpHeaders();
-        Enumeration<String> headerNames = request.getHeaderNames();
-
-        while (headerNames.hasMoreElements()) {
-            String headerName = headerNames.nextElement();
-            Enumeration<String> headerValues = request.getHeaders(headerName);
-            while (headerValues.hasMoreElements()) {
-                headers.add(headerName, headerValues.nextElement());
-            }
-        }
-
-        HttpEntity<String> entity = new HttpEntity<>(headers);
-        return restTemplate.exchange(targetUrl, HttpMethod.valueOf(request.getMethod()), entity, String.class);
+        return requestForwardingService.forwardRequest(request, targetUrl, HttpMethod.GET);
     }
 }

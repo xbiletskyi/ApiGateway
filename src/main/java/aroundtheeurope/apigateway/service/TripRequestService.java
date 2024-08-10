@@ -1,7 +1,9 @@
 package aroundtheeurope.apigateway.service;
 
+import aroundtheeurope.apigateway.dto.ForwardedTripRequestDTO;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.listener.ChannelTopic;
 import org.springframework.http.ResponseEntity;
@@ -21,9 +23,7 @@ public class TripRequestService {
         this.redisTemplate = redisTemplate;
     }
 
-    public ResponseEntity<String> queueTripRequest(HttpServletRequest request, String userId) {
-        String requestURI = request.getRequestURI().replace("/gateway/api/v1/trips", "");
-        String fullRequest = userId + ":" + requestURI + "?" + request.getQueryString();
+    public ResponseEntity<String> queueTripRequest(ForwardedTripRequestDTO request, String userId) {
 
         // Check if user already has a request in the queue
         if (redisTemplate.opsForZSet().score("tripRequestQueueSet", userId) != null) {
@@ -35,7 +35,7 @@ public class TripRequestService {
         redisTemplate.opsForZSet().add("tripRequestQueueSet", userId, score);
 
         // Send request to RabbitMQ
-        rabbitTemplate.convertAndSend("tripRequestQueue", fullRequest);
+        rabbitTemplate.convertAndSend("tripRequestQueue", request);
 
         return ResponseEntity.accepted().body("Request queued successfully.");
     }
