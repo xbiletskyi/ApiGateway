@@ -1,6 +1,8 @@
 package aroundtheeurope.apigateway.controller;
 
 import aroundtheeurope.apigateway.dto.ForwardedTripRequestDTO;
+import aroundtheeurope.apigateway.dto.LogoutRequest;
+import aroundtheeurope.apigateway.dto.RefreshRequestDTO;
 import aroundtheeurope.apigateway.dto.TripRequestDTO;
 import aroundtheeurope.apigateway.service.RequestForwardingService;
 import aroundtheeurope.apigateway.service.TripRequestService;
@@ -18,7 +20,7 @@ import org.springframework.web.client.RestTemplate;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/gateway")
+@RequestMapping("/gateway/api/v1/")
 public class GatewayController {
 
     @Value("${trip-service.url}")
@@ -41,7 +43,7 @@ public class GatewayController {
         this.requestForwardingService = requestForwardingService;
     }
 
-    @PostMapping("/api/v1/trips")
+    @PostMapping("/trips")
     public ResponseEntity<String> queueTripRequest(@RequestBody @Valid TripRequestDTO tripRequestDTO, @AuthenticationPrincipal Jwt jwt) {
 
         String userId = jwt.getSubject();
@@ -50,19 +52,19 @@ public class GatewayController {
         return tripRequestService.queueTripRequest(forwardedTripRequestDTO, userId);
     }
 
-    @DeleteMapping("/api/v1/trips")
+    @DeleteMapping("/trips")
     public ResponseEntity<String> deleteTripRequests(@AuthenticationPrincipal Jwt jwt) {
         String userId = jwt.getSubject();
         return tripRequestService.removeTripRequest(userId);
     }
 
-    @GetMapping("/api/v1/trips/position")
+    @GetMapping("/trips/position")
     public ResponseEntity<String> getTripPosition(@AuthenticationPrincipal Jwt jwt) {
         String userId = jwt.getSubject();
         return tripRequestService.getTripRequestPosition(userId);
     }
 
-    @GetMapping("/api/v1/trips")
+    @GetMapping("/trips")
     public ResponseEntity<String> getTrips(
             @RequestParam(required = false) UUID requestId,
             @AuthenticationPrincipal Jwt jwt,
@@ -77,6 +79,51 @@ public class GatewayController {
             targetUrl += "?userId=" + userId;
         }
 
-        return requestForwardingService.forwardRequest(request, targetUrl, HttpMethod.GET);
+        return requestForwardingService.forwardRequest(request, targetUrl, HttpMethod.GET, null);
+    }
+
+    @GetMapping("/trips/preview")
+    public ResponseEntity<?> getTripsPreview(
+            @AuthenticationPrincipal Jwt jwt,
+            HttpServletRequest request
+    ) {
+        String userId = jwt.getSubject();
+        String targetUrl = tripServiceUrl + "/api/v1/trips/preview" + "?userId=" + userId;
+        return requestForwardingService.forwardRequest(request, targetUrl, HttpMethod.GET, null);
+    }
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    @PostMapping("/register")
+    public ResponseEntity<?> register(HttpServletRequest request){
+        String targetUrl = identityServiceUrl + "/api/v1/register";
+        return requestForwardingService.forwardRequest(request, targetUrl, HttpMethod.POST, null);
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<?> login(HttpServletRequest request) {
+        String targetUrl = identityServiceUrl + "/api/v1/login";
+        return requestForwardingService.forwardRequest(request, targetUrl, HttpMethod.POST, null);
+    }
+
+    @GetMapping("/refresh")
+    public ResponseEntity<?> refresh(
+            @AuthenticationPrincipal Jwt jwt,
+            @RequestParam(value = "expiration", required = false, defaultValue = "600") long expiration,
+            HttpServletRequest request
+    ) {
+        RefreshRequestDTO refreshRequestDTO = new RefreshRequestDTO(jwt.getTokenValue(), expiration);
+        String targetUrl = identityServiceUrl + "/api/v1/refresh";
+        return requestForwardingService.forwardRequest(request, targetUrl, HttpMethod.POST, refreshRequestDTO);
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout(
+            @AuthenticationPrincipal Jwt jwt,
+            HttpServletRequest request
+    ){
+        LogoutRequest logoutRequest = new LogoutRequest(jwt.getTokenValue());
+        String targetUrl = identityServiceUrl + "/api/v1/logout";
+        return requestForwardingService.forwardRequest(request, targetUrl, HttpMethod.POST, logoutRequest);
     }
 }

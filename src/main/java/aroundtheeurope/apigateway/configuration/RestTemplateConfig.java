@@ -9,7 +9,9 @@ public class RestTemplateConfig {
 
     @Bean
     public RestTemplate restTemplate() {
-        return new RestTemplate();
+        RestTemplate restTemplate = new RestTemplate();
+        restTemplate.setErrorHandler(new PassThroughResponseErrorHandler());
+        return restTemplate;
     }
 }
 

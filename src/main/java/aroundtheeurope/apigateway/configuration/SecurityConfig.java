@@ -26,7 +26,6 @@ public class SecurityConfig {
                         authorizeRequests
                                 .requestMatchers("/gateway/api/v1/login").permitAll()
                                 .requestMatchers("/gateway/api/v1/register").permitAll()
-                                .requestMatchers("/gateway/api/v1/refresh").permitAll()
                                 .requestMatchers(request -> {
                                     String remoteAddr = request.getRemoteAddr();
                                     return "127.0.0.1".equals(remoteAddr) || "::1".equals(remoteAddr);
