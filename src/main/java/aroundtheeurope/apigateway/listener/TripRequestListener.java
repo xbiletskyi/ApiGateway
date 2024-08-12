@@ -2,6 +2,7 @@ package aroundtheeurope.apigateway.listener;
 
 import aroundtheeurope.apigateway.dto.ForwardedTripRequestDTO;
 import aroundtheeurope.apigateway.service.NotificationService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -20,34 +21,43 @@ public class TripRequestListener {
     private final RestTemplate restTemplate;
     private final RedisTemplate<String, String> redisTemplate;
     private final NotificationService notificationService;
+    private final ObjectMapper objectMapper;
 
     @Autowired
     public TripRequestListener(
             RestTemplate restTemplate,
             RedisTemplate<String, String> redisTemplate,
-            NotificationService notificationService
+            NotificationService notificationService,
+            ObjectMapper objectMapper
     ) {
         this.restTemplate = restTemplate;
         this.redisTemplate = redisTemplate;
         this.notificationService = notificationService;
+        this.objectMapper = objectMapper;
     }
 
     @RabbitListener(queues = "tripRequestQueue")
-    public void processTripRequest(ForwardedTripRequestDTO forwardedRequest) {
+    public void processTripRequest(String serializedRequest) {
+        ForwardedTripRequestDTO request;
+        try{
+             request = objectMapper.readValue(serializedRequest, ForwardedTripRequestDTO.class);
+        }
+        catch (Exception e){
+            return;
+        }
         // Check if the request is still valid by checking its presence in the sorted set
-        if (redisTemplate.opsForZSet().score("tripRequestQueueSet", forwardedRequest.getUserId()) == null) {
-            // Skip processing if the request has been removed
+        if (redisTemplate.opsForZSet().score("tripRequestQueueSet", request.getUserId()) == null) {
             return;
         }
 
         String targetURL = baseUrl + tripsPath;
-        restTemplate.getForEntity(targetURL, String.class);
+        restTemplate.postForEntity(targetURL, request, String.class);
 
         // Remove the processed request from the sorted set
-        redisTemplate.opsForZSet().remove("tripRequestQueueSet", forwardedRequest.getUserId());
+        redisTemplate.opsForZSet().remove("tripRequestQueueSet", request.getUserId());
 
-        // Notify the user upon completion
-        notificationService.notifyUser(forwardedRequest.getUserId(), "Request processed successfully for user "
-                + forwardedRequest.getUserId());
+//        // Notify the user upon completion
+//        notificationService.notifyUser(request.getUserId(), "Request processed successfully for user "
+//                + request.getUserId());
     }
 }

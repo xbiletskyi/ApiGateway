@@ -15,7 +15,7 @@ public class NotificationService {
     }
 
     public void notifyUser(String userId, String message) {
-        String notificationEndpoint = "http://notification-service/api/v1/notify";
+        String notificationEndpoint = "http://localhost:60003/api/v1/notify";
         NotificationRequest notificationRequest = new NotificationRequest(userId, message);
 
         restTemplate.postForEntity(notificationEndpoint, notificationRequest, String.class);

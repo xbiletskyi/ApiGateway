@@ -6,10 +6,12 @@ import aroundtheeurope.apigateway.dto.RefreshRequestDTO;
 import aroundtheeurope.apigateway.dto.TripRequestDTO;
 import aroundtheeurope.apigateway.service.RequestForwardingService;
 import aroundtheeurope.apigateway.service.TripRequestService;
+import aroundtheeurope.apigateway.service.TripRequestValidator;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -28,25 +30,34 @@ public class GatewayController {
     @Value("${identity-service.url}")
     private String identityServiceUrl;
 
-    private final RestTemplate restTemplate;
     private final TripRequestService tripRequestService;
     private final RequestForwardingService requestForwardingService;
+    private final TripRequestValidator tripRequestValidator;
+    private final RestTemplate restTemplate;
 
     @Autowired
     public GatewayController(
-            RestTemplate restTemplate,
             TripRequestService tripRequestService,
-            RequestForwardingService requestForwardingService
+            RequestForwardingService requestForwardingService,
+            TripRequestValidator tripRequestValidator,
+            RestTemplate restTemplate
     ) {
-        this.restTemplate = restTemplate;
         this.tripRequestService = tripRequestService;
         this.requestForwardingService = requestForwardingService;
+        this.tripRequestValidator = tripRequestValidator;
+        this.restTemplate = restTemplate;
     }
 
     @PostMapping("/trips")
     public ResponseEntity<String> queueTripRequest(@RequestBody @Valid TripRequestDTO tripRequestDTO, @AuthenticationPrincipal Jwt jwt) {
 
         String userId = jwt.getSubject();
+        tripRequestDTO = tripRequestValidator.validateAndSetDefaults(tripRequestDTO);
+
+        if (tripRequestDTO == null){
+            return ResponseEntity.badRequest().build();
+        }
+
         ForwardedTripRequestDTO forwardedTripRequestDTO = new ForwardedTripRequestDTO(tripRequestDTO, userId);
 
         return tripRequestService.queueTripRequest(forwardedTripRequestDTO, userId);

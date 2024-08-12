@@ -27,6 +27,7 @@ dependencies {
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     // RabbitMQ
     implementation("org.springframework.amqp:spring-rabbit:3.1.6")
+    implementation("org.springframework.boot:spring-boot-starter-amqp")
     // Redis
     implementation("org.springframework.boot:spring-boot-starter-data-redis:3.3.0")
     // Dotenv
