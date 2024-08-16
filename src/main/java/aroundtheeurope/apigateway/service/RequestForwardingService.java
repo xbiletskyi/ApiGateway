@@ -14,15 +14,33 @@ import java.util.Enumeration;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * Service responsible for forwarding HTTP requests to target services.
+ * It constructs the target URL, copies headers, and sends the request using RestTemplate.
+ */
 @Service
 public class RequestForwardingService {
 
     private final RestTemplate restTemplate;
 
+    /**
+     * Constructor for RequestForwardingService, autowiring the RestTemplate.
+     *
+     * @param restTemplate the RestTemplate used for sending HTTP requests
+     */
     public RequestForwardingService(RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
     }
 
+    /**
+     * Forwards the HTTP request to the specified target URL with the given method and optional body.
+     *
+     * @param request the original HttpServletRequest to forward
+     * @param targetUrl the target URL where the request should be forwarded
+     * @param method the HTTP method to use (GET, POST, etc.)
+     * @param body the body content to include in the forwarded request (can be null)
+     * @return ResponseEntity with the response from the target service
+     */
     public ResponseEntity<String> forwardRequest(
             HttpServletRequest request,
             String targetUrl,
@@ -30,6 +48,7 @@ public class RequestForwardingService {
             Object body
     ) {
 
+        // Copy headers from the original request, excluding Authorization
         HttpHeaders headers = new HttpHeaders();
         Enumeration<String> headerNames = request.getHeaderNames();
         while (headerNames.hasMoreElements()) {
@@ -40,6 +59,7 @@ public class RequestForwardingService {
         }
         headers.setContentType(MediaType.APPLICATION_JSON);
 
+        // Construct the target URI with query parameters
         UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromHttpUrl(targetUrl);
         Map<String, String[]> params = request.getParameterMap();
         for (Map.Entry<String, String[]> entry : params.entrySet()) {
@@ -48,6 +68,7 @@ public class RequestForwardingService {
             }
         }
 
+        // If the body is null and the method is POST, PUT, or PATCH, extract the request body
         if (body == null && (method == HttpMethod.POST || method == HttpMethod.PUT || method == HttpMethod.PATCH)) {
             try {
                 body = extractRequestBody(request);
@@ -64,6 +85,13 @@ public class RequestForwardingService {
         return restTemplate.exchange(uri, method, entity, String.class);
     }
 
+    /**
+     * Helper method to extract the body content from the original HTTP request.
+     *
+     * @param request the original HttpServletRequest
+     * @return the body content as a String, or null if empty
+     * @throws IOException if an I/O error occurs while reading the request body
+     */
     private String extractRequestBody(HttpServletRequest request) throws IOException {
         BufferedReader reader = request.getReader();
         String body = reader.lines().collect(Collectors.joining(System.lineSeparator()));

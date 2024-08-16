@@ -8,6 +8,11 @@ import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+/**
+ * Configuration class for customizing the behavior of the Jackson ObjectMapper.
+ * This configuration ensures proper serialization/deserialization of Java 8 Date/Time API
+ * and parameter names during deserialization.
+ */
 @Configuration
 public class ObjectMapperConfig {
 
@@ -16,15 +21,15 @@ public class ObjectMapperConfig {
         ObjectMapper objectMapper = new ObjectMapper();
 
         // Register modules to handle specific types
-        objectMapper.registerModule(new JavaTimeModule());  // Handles Java 8 date/time types
-        objectMapper.registerModule(new ParameterNamesModule());  // Supports constructor-based injection
+        objectMapper.registerModule(new JavaTimeModule());
+        objectMapper.registerModule(new ParameterNamesModule());
 
         // Configure serialization features
-        objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);  // Write dates as ISO strings, not timestamps
-        objectMapper.enable(SerializationFeature.INDENT_OUTPUT);  // Pretty print JSON
+        objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
 
         // Configure deserialization features
-        objectMapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);  // Ignore unknown properties during deserialization
+        objectMapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
 
         return objectMapper;
     }

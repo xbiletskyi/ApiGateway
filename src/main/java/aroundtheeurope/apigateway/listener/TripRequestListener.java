@@ -10,6 +10,10 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+/**
+ * Listener class for processing trip requests from the RabbitMQ queue.
+ * The listener listens to the "tripRequestQueue", processes the requests, and interacts with external services.
+ */
 @Service
 public class TripRequestListener {
 
@@ -23,6 +27,14 @@ public class TripRequestListener {
     private final NotificationService notificationService;
     private final ObjectMapper objectMapper;
 
+    /**
+     * Constructor for TripRequestListener, autowiring necessary services and components.
+     *
+     * @param restTemplate the RestTemplate for making HTTP requests to the trip service
+     * @param redisTemplate the RedisTemplate for interacting with Redis (to check the validity of requests)
+     * @param notificationService the service used for notifying users about request processing status
+     * @param objectMapper the ObjectMapper for serializing and deserializing JSON data
+     */
     @Autowired
     public TripRequestListener(
             RestTemplate restTemplate,
@@ -36,6 +48,13 @@ public class TripRequestListener {
         this.objectMapper = objectMapper;
     }
 
+    /**
+     * Method that listens to the "tripRequestQueue" and processes incoming trip requests.
+     * The request is deserialized, validated against the Redis store, sent to the trip service,
+     * and finally, the request is removed from the Redis sorted set.
+     *
+     * @param serializedRequest the serialized JSON string representing the trip request
+     */
     @RabbitListener(queues = "tripRequestQueue")
     public void processTripRequest(String serializedRequest) {
         ForwardedTripRequestDTO request;

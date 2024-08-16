@@ -12,9 +12,19 @@ import org.springframework.context.annotation.Configuration;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Configuration class for RabbitMQ setup.
+ * This configuration defines the queue used for trip request forwarding.
+ */
 @Configuration
 public class RabbitMQConfig {
 
+    /**
+     * Declares a persistent queue named "tripRequestQueue".
+     * This queue is used to store and forward trip requests.
+     *
+     * @return the queue bean
+     */
     @Bean
     public Queue tripRequestQueue() {
         return new Queue("tripRequestQueue", true);

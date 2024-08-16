@@ -12,12 +12,24 @@ import org.springframework.security.web.SecurityFilterChain;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
+/**
+ * Security configuration class for the API Gateway.
+ * This configuration secures the gateway endpoints and configures JWT-based authentication.
+ */
 @Configuration
 public class SecurityConfig {
 
     @Value("${jwt.secret}")
     private String signingKey;
 
+    /**
+     * Configures the security filter chain for HTTP requests.
+     * It disables CSRF protection and sets up authorization rules for different endpoints.
+     *
+     * @param http the HttpSecurity object used to configure security settings
+     * @return the SecurityFilterChain bean
+     * @throws Exception if an error occurs during configuration
+     */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
@@ -38,6 +50,12 @@ public class SecurityConfig {
         return http.build();
     }
 
+    /**
+     * Configures the JwtDecoder to decode JWT tokens using the HMAC SHA-256 algorithm.
+     * The signing key is provided via configuration.
+     *
+     * @return the JwtDecoder bean
+     */
     @Bean
     public JwtDecoder jwtDecoder(){
         SecretKey key = new SecretKeySpec(signingKey.getBytes(), "HmacSHA256");

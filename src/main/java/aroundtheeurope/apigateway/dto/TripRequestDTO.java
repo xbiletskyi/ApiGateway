@@ -1,12 +1,15 @@
 package aroundtheeurope.apigateway.dto;
 
 import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
-import java.time.LocalDate;
+
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * A data transfer object representing a trip request.
+ * This DTO contains all the necessary details to request a trip, including origin, destination, dates, and budget.
+ */
 public class TripRequestDTO {
 
     @NotEmpty(message = "Origin is required")
@@ -30,14 +33,21 @@ public class TripRequestDTO {
 
     private boolean schengenOnly = false;
 
-    List<String> excludedCities = new ArrayList<>();
+    List<String> excludedAirports = new ArrayList<>();
 
     @Positive(message = "Time limit must be positive")
     private int timeLimitSeconds = 10;
 
+    /**
+     * Default constructor for serialization frameworks.
+     */
     public TripRequestDTO() {}
 
-    // Copy constructor
+    /**
+     * Copy constructor that creates a new TripRequestDTO by copying all fields from another instance.
+     *
+     * @param other the original TripRequestDTO to copy
+     */
     public TripRequestDTO(TripRequestDTO other) {
         this.origin = other.origin;
         this.destination = other.destination;
@@ -47,7 +57,7 @@ public class TripRequestDTO {
         this.maxStay = other.maxStay;
         this.minStay = other.minStay;
         this.schengenOnly = other.schengenOnly;
-        this.excludedCities = new ArrayList<>(other.excludedCities); // Ensure a deep copy of the list
+        this.excludedAirports = new ArrayList<>(other.excludedAirports); // Ensure a deep copy of the list
         this.timeLimitSeconds = other.timeLimitSeconds;
     }
 
@@ -117,12 +127,12 @@ public class TripRequestDTO {
         this.schengenOnly = schengenOnly;
     }
 
-    public List<String> getExcludedCities() {
-        return excludedCities;
+    public List<String> getExcludedAirports() {
+        return excludedAirports;
     }
 
-    public void setExcludedCities(List<String> excludedCities) {
-        this.excludedCities = excludedCities;
+    public void setExcludedAirports(List<String> excludedAirports) {
+        this.excludedAirports = excludedAirports;
     }
 
     public int getTimeLimitSeconds() {
