@@ -94,4 +94,46 @@ public class IdentityServiceController {
         String targetUrl = identityServiceUrl + "/api/v1/logout";
         return requestForwardingService.forwardRequest(request, targetUrl, HttpMethod.POST, logoutRequest);
     }
+
+    /**
+     * Endpoint to retrieve the url to the user's avatar
+     *
+     * @param jwt the JWT token used to extract the user id
+     * @param request the HttpServletRequest object containing possible additional information to be forwarded
+     * @return url to the user's avatar photo
+     */
+    @GetMapping("/users/avatar")
+    public ResponseEntity<?> getUserAvatar(@AuthenticationPrincipal Jwt jwt, HttpServletRequest request) {
+        String userId = jwt.getSubject();
+        String targetUrl = identityServiceUrl + "/api/v1/users/" + userId + "/avatar";
+        return requestForwardingService.forwardRequest(request, targetUrl, HttpMethod.GET, null);
+    }
+
+    /**
+     * Endpoint to update the user's avatar
+     *
+     * @param jwt the JWT token used to extract the user id
+     * @param request the HttpServletObject containing possible additional information to be forwarded
+     * @return url to the new avatar
+     */
+    @PostMapping("/users/avatar")
+    public ResponseEntity<?> updateUserAvatar(@AuthenticationPrincipal Jwt jwt, HttpServletRequest request) {
+        String userId = jwt.getSubject();
+        String targetUrl = identityServiceUrl + "/api/v1/users/" + userId + "/avatar";
+        return requestForwardingService.forwardRequest(request, targetUrl, HttpMethod.POST, null);
+    }
+
+    /**
+     * Endpoint to delete the user's avatar
+     *
+     * @param jwt the JWT token used to extract the user id
+     * @param request the HttpServletRequest object containing possible additional information to be forwarded
+     * @return request status message, no body
+     */
+    @DeleteMapping("/users/avatar")
+    public ResponseEntity<?> deleteUserAvatar(@AuthenticationPrincipal Jwt jwt, HttpServletRequest request) {
+        String userId = jwt.getSubject();
+        String targetUrl = identityServiceUrl + "/api/v1/users/" + userId + "/avatar";
+        return requestForwardingService.forwardRequest(request, targetUrl, HttpMethod.DELETE, null);
+    }
 }

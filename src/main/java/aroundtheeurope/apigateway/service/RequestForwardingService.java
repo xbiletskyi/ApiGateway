@@ -2,6 +2,7 @@ package aroundtheeurope.apigateway.service;
 
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StreamUtils;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -57,7 +58,10 @@ public class RequestForwardingService {
                 headers.add(headerName, request.getHeader(headerName));
             }
         }
-        headers.setContentType(MediaType.APPLICATION_JSON);
+        String contentType = request.getContentType();
+        if (contentType != null) {
+            headers.set(HttpHeaders.CONTENT_TYPE, contentType);
+        }
 
         // Construct the target URI with query parameters
         UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromHttpUrl(targetUrl);
@@ -71,7 +75,7 @@ public class RequestForwardingService {
         // If the body is null and the method is POST, PUT, or PATCH, extract the request body
         if (body == null && (method == HttpMethod.POST || method == HttpMethod.PUT || method == HttpMethod.PATCH)) {
             try {
-                body = extractRequestBody(request);
+                body = StreamUtils.copyToByteArray(request.getInputStream());
             } catch (IOException e) {
                 throw new RuntimeException("Failed to read request body", e);
             }
